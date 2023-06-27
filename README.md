@@ -1,6 +1,12 @@
-## Databse parsing pipeline
+## Rebuilding Core Database
+
+## Database Parsing Pipeline
+
+In order to create a database of OPIC well data that is useful in the scope of other projects and easier to work with internally, the data must be cleaned. Once cleaned, the well data will be constructed into objects. Finally, the data will be added to an instance of Postgres.
 
 #### Cleaning
+
+The original core data must be cleaned. First, because there are too many errant values. Secondly, because the vast majority of wells examined internally and by external clients are the wells for which we have complete data, at either the well or the box level. 
 
 ###### Steps
 
@@ -10,7 +16,7 @@ Certain wells do not have an API, or have various comments in the 'API' field fo
 
 2) Filter "A/C" Files
 
-Some 'File #' entries are equal to "A/C," indicating that they must be physically reassigned from the Amoco Collection (see "Comments" entires). These entries will be omitted: they do not contain any box-level data and the fact they still exist in the Amoco collection indicates they are rarely, if ever, pulled for client requests.
+Some 'File #' entries are equal to "A/C," indicating that they must be physically reassigned from the Amoco Collection (see "Comments" entires). These entries will be omitted: they do not contain any box-level data and the fact they still exist in the Amoco collection indicates they are not commonly used.
 
 3) Expand box-level data
 
@@ -19,12 +25,16 @@ Many wells do not have individual boxes. These present in two ways:
 	3.1) 'Box #' contains the total boxes, and the total is empty
 	3.2) 'Box #' contains a range
 
-To solve this, we will add to the "cleaned" DF row-by-row, creating new rows as appropriate.
+To solve this, we will add to the "cleaned" DF row-by-row, creating new rows as appropriate where a range of boxes in a CSV row must become one new row for each box. This will result in many boxes for which there are no depths, however since the ranges of boxes are labeled with formation the box-level data will still prove useful.
 
 #### Parsing
 
-The next stage will be taking a cleaned CSV and restructuring it before it is entered into Postgres. This will involve creating abstract structures for "Well" data (OPIC_well.py object class), each instance of which contains an array of "Box" objects (OPIC_WellBox.py).
+Before entry into Postgres, we will reduce redundancy in the data by restructuring it as a large set of objects. This will aid in forming a two-level structure ("box level" and "well level") to the data that will duplicated well-level values for each box in a well before adding to a SQL-based system.
+
+The next stage will be taking a cleaned CSV and restructuring it before it is entered into Postgres. This will involve creating abstract structures for "Well" data (OPIC_well.py object class), each instance of which contains an array of "Box" objects (OPIC_WellBox.py). Note that this stage will not produce an intermediate file: once parsed into objects, these will be immediately entered into Postgres.
 
 #### Postgres creation
+
+We will create a table for wells, and then populate it with well level data for a well. We will also create a type for boxes, then populate the well-level entry in our table with an array of box values. This may potentially be changed, as using an array within a cell could prove impractical when retrieving the data, however the general two-tiered approach will be used.
 
 psycopg2 is a python library designed to perform SQL commands. "db_test_code.sql" contains SQL commands for structuring a database and we will use this as a guide for how to use psycopg2 once cleaned data has been restructured as python objects.
