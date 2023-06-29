@@ -6,7 +6,7 @@ In order to create a database of OPIC well data that is useful in the scope of o
 
 #### Cleaning
 
-The original core data must be cleaned. First, because there are too many errant values. Secondly, because the vast majority of wells examined internally and by external clients are the wells for which we have complete data, at either the well or the box level. 
+The original core data must be cleaned. There are two main reasons for this. First, because there are too many errant values (NaNs, type mismatches, etc.). Secondly, because the vast majority of wells examined internally and by external clients are the wells for which we have complete data, at either the well or the box level. 
 
 ###### Steps
 
@@ -17,6 +17,8 @@ Certain wells do not have an API, or have various comments in the 'API' field fo
 2) Filter "A/C" Files
 
 Some 'File #' entries are equal to "A/C," indicating that they must be physically reassigned from the Amoco Collection (see "Comments" entires). These entries will be omitted: they do not contain any box-level data and the fact they still exist in the Amoco collection indicates they are not commonly used.
+
+One possibility going forward would be to create a boolean value indicating wether or not a well has boxes still present in the Amoco Collection that have not been fully surveyed.
 
 3) Expand box-level data
 
@@ -29,12 +31,12 @@ To solve this, we will add to the "cleaned" DF row-by-row, creating new rows as 
 
 #### Parsing
 
-Before entry into Postgres, we will reduce redundancy in the data by restructuring it as a large set of objects. This will aid in forming a two-level structure ("box level" and "well level") to the data that will duplicated well-level values for each box in a well before adding to a SQL-based system.
+Before entry into Postgres, we will reduce redundancy in the data by restructuring it as a large set of objects. This will aid in forming a two-level structure ("box level" and "well level") to the data that will eliminate duplicated well-level values at the box-level before adding to a SQL-based system.
 
-The next stage will be taking a cleaned CSV and restructuring it before it is entered into Postgres. This will involve creating abstract structures for "Well" data (OPIC_well.py object class), each instance of which contains an array of "Box" objects (OPIC_WellBox.py). Note that this stage will not produce an intermediate file: once parsed into objects, these will be immediately entered into Postgres.
+ This will involve creating abstract structures for "Well" data (OPIC_well.py object class), each instance of which contains an array of "Box" objects (OPIC_WellBox.py). Note that this stage will not produce an intermediate file: once parsed into objects, these will be immediately entered into Postgres.
 
 #### Postgres creation
 
 We will create a table for wells, and then populate it with well level data for a well. We will also create a type for boxes, then populate the well-level entry in our table with an array of box values. This may potentially be changed, as using an array within a cell could prove impractical when retrieving the data, however the general two-tiered approach will be used.
 
-psycopg2 is a python library designed to perform SQL commands. "db_test_code.sql" contains SQL commands for structuring a database and we will use this as a guide for how to use psycopg2 once cleaned data has been restructured as python objects.
+psycopg2 is a python library designed to perform SQL commands. "db_test_code.sql" contains SQL commands for structuring a database and we will use this as a guide for how to use psycopg2 once cleaned data has been restructured.
