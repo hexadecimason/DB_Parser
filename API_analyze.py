@@ -2,6 +2,7 @@
 # Given the missing information, the database can more effectively be parsed into a PgSQL database
 
 import pandas as pd
+import numpy as np
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 1000)
 
@@ -19,6 +20,7 @@ df_clean = df_master[['File #', 'Box', 'Total', 'API', 'Operator',
 # [1] = array of APIs/API descriptors where no API exists
 bad_api = [[], []]
 good_api_files = []
+null_boxes = []
 
 # Extract file #s with bad API entries
 for file in df_clean['File #'].unique():
@@ -32,9 +34,12 @@ for file in df_clean['File #'].unique():
 	else:
 		good_api_files.append(sub_df['File #'].iloc[0])
 
+		for i in range(len(sub_df['Box'])):
+			if pd.isnull(sub_df['Box'].iloc[i]) and pd.isnull(sub_df['Total'].iloc[i]):
+				null_boxes.append(file)
+
 
 # OUTPUT for bad APIs
-
 print("Bad API:")
 
 # DF for all bad APIs
@@ -59,4 +64,15 @@ bad_api_df['api entry'].fillna('## empty field/NaN', inplace=True)
 print("\nBad API Summary: ")
 print(bad_api_df['api entry'].value_counts())
 print("TOTAL: ", sum(bad_api_df['api entry'].value_counts()))
+
+
+# Idenify wells with APIs but nulled box + totals
+
+print("\nnulled box files with good APIs: ")
+nullseries = pd.Series(null_boxes)
+
+print("Total: ", len(np.unique(nullseries)))
+
+with pd.option_context('display.max_rows', None):
+	print(nullseries.value_counts()[nullseries.unique()])
 ##############################################################################
