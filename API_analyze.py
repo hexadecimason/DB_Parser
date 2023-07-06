@@ -3,6 +3,7 @@
 
 import pandas as pd
 import numpy as np
+import os.path
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 1000)
 
@@ -14,13 +15,12 @@ df_master = pd.DataFrame(master_csv)
 df_clean = df_master[['File #', 'Box', 'Total', 'API', 'Operator', 
                     'Lease', 'Well #', 'Top', 'Bottom', 'Type', 'Comments']]
 
-##############################################################################
+##################### PROCESS APIs ##########################
 # FLAG: wells with missing API
 # [0] = array of file #s
 # [1] = array of APIs/API descriptors where no API exists
 bad_api = [[], []]
-good_api_files = []
-null_boxes = []
+null_boxes = [] # lines with no box number and no box total
 
 # Extract file #s with bad API entries
 for file in df_clean['File #'].unique():
@@ -32,23 +32,21 @@ for file in df_clean['File #'].unique():
 		bad_api[1].append(sub_df['API'].iloc[0])
 	# filter out good api files
 	else:
-		good_api_files.append(sub_df['File #'].iloc[0])
-
 		for i in range(len(sub_df['Box'])):
 			if pd.isnull(sub_df['Box'].iloc[i]) and pd.isnull(sub_df['Total'].iloc[i]):
 				null_boxes.append(file)
 
 
-# OUTPUT for bad APIs
-print("Bad API:")
+################# OUTPUT for bad APIs #################
+print("Bad APIs:")
 
 # DF for all bad APIs
 data1 = {'file' : bad_api[0], 'api entry' : bad_api[1]}
 bad_api_df = pd.DataFrame(data = data1)
 
 
-with pd.option_context('display.max_rows', None):
-	print(bad_api_df)
+#with pd.option_context('display.max_rows', None):
+#	print(bad_api_df)
 
 # Grouped DF
 # replace "changed to..." values for better grouping
@@ -66,8 +64,8 @@ print(bad_api_df['api entry'].value_counts())
 print("TOTAL: ", sum(bad_api_df['api entry'].value_counts()))
 
 
-# Idenify wells with APIs but nulled box + totals
-
+################# Idenify wells with APIs but nulled box + totals
+'''
 print("\nnulled box files with good APIs: ")
 nullseries = pd.Series(null_boxes)
 
@@ -75,4 +73,13 @@ print("Total: ", len(np.unique(nullseries)))
 
 with pd.option_context('display.max_rows', None):
 	print(nullseries.value_counts()[nullseries.unique()])
-##############################################################################
+'''
+################# examine nullboxes.csv 
+
+if os.path.isfile('nullboxes.csv'):
+	boxless_csv = pd.read_csv('nullboxes.csv', low_memory = False)
+	null_df = pd.DataFrame(boxless_csv)
+	print("\nDB entries with no box numbers,  by sample type: ")
+	print(null_df['Type'].value_counts())
+
+

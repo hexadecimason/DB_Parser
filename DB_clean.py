@@ -13,8 +13,10 @@ df_master = pd.DataFrame(master_csv)
 sub_df = pd.DataFrame()
 clean_df = pd.DataFrame(columns = df_master.columns.values.tolist())
 cleanfile = pd.DataFrame(columns = df_master.columns.values.tolist())
+nullboxes_df = pd.DataFrame(columns = df_master.columns.values.tolist())
 
 cleanMasterDates = False
+separateNullBoxes = False
 
 ##############################################################################
 
@@ -25,6 +27,7 @@ def main():
 	global sub_df # df for expanding each potential cluster of boxes
 	global cleanfile # a cleaned whole file for appending to clean_df
 	global clean_df # final cleaned data
+	global nullboxes_df # 
 
 	# dates in master file could become auto-formatted
 	# this saves a corrected file if we need it
@@ -39,6 +42,12 @@ def main():
 
 	# FILTER FOR "A/C files"
 	filtered = filtered[filtered['File #'] != 'A/C']
+
+	# save df where box fields are null
+	if separateNullBoxes:
+		nullboxes_df = filtered[filtered['Box'].isna() & filtered['Total'].isna()]
+		nullboxes_df.to_csv('nullboxes.csv', index = False)
+		print('saved null box data')
 
 	# FILTER FOR DOUBLE-NULLS
 	filtered = filtered.dropna(subset = ['Box', 'Total'])
@@ -94,7 +103,7 @@ def main():
 		clean_df = pd.concat([clean_df, cleanfile], ignore_index = True)
 
 	# SAVE TO FILE
-	clean_df.to_csv('out.csv', index = False)
+	clean_df.to_csv('cleaned.csv', index = False)
 
 ##############################################################################
 
