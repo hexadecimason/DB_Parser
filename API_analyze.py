@@ -8,7 +8,7 @@ pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 1000)
 
 # load CSV into a DF
-master_csv = pd.read_csv('OGS_OCDB/DB_master.csv', low_memory = False)
+master_csv = pd.read_csv('data/DB_master.csv', low_memory = False)
 df_master = pd.DataFrame(master_csv)
 
 # Select needed columns: many are not needed for this purpose
@@ -76,10 +76,8 @@ with pd.option_context('display.max_rows', None):
 '''
 ################# examine nullboxes.csv 
 
-if os.path.isfile('nullboxes.csv'):
-	boxless_csv = pd.read_csv('nullboxes.csv', low_memory = False)
+if os.path.isfile('data/nullboxes.csv'):
+	boxless_csv = pd.read_csv('data/nullboxes.csv', low_memory = False)
 	null_df = pd.DataFrame(boxless_csv)
 	print("\nDB entries with no box numbers,  by sample type: ")
 	print(null_df['Type'].value_counts())
-
-

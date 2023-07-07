@@ -7,7 +7,7 @@ pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 1000)
 
 # load CSV into a DF
-master_csv = pd.read_csv('OGS_OCDB/DB_master.csv', low_memory = False)
+master_csv = pd.read_csv('data/DB_master.csv', low_memory = False)
 df_master = pd.DataFrame(master_csv)
 
 sub_df = pd.DataFrame()
@@ -16,7 +16,7 @@ cleanfile = pd.DataFrame(columns = df_master.columns.values.tolist())
 nullboxes_df = pd.DataFrame(columns = df_master.columns.values.tolist())
 
 cleanMasterDates = False
-separateNullBoxes = False
+separateNullBoxes = True
 
 ##############################################################################
 
@@ -34,7 +34,7 @@ def main():
 	global cleanMasterDates
 	if cleanMasterDates:
 		df_master['Well #'] = df_master['Well #'].apply(parseWellNum)
-		df_master.to_csv('OGS_OCDB/DB_master_cleandates.csv', index = False)
+		df_master.to_csv('data/DB_master_cleandates.csv', index = False)
 
 	# FILTER DF FOR GOOD APIs
 	df_master = df_master.dropna(subset = 'API') # drop empty values
@@ -46,7 +46,7 @@ def main():
 	# save df where box fields are null
 	if separateNullBoxes:
 		nullboxes_df = filtered[filtered['Box'].isna() & filtered['Total'].isna()]
-		nullboxes_df.to_csv('nullboxes.csv', index = False)
+		nullboxes_df.to_csv('data/nullboxes.csv', index = False)
 		print('saved null box data')
 
 	# FILTER FOR DOUBLE-NULLS
@@ -103,7 +103,7 @@ def main():
 		clean_df = pd.concat([clean_df, cleanfile], ignore_index = True)
 
 	# SAVE TO FILE
-	clean_df.to_csv('cleaned.csv', index = False)
+	clean_df.to_csv('data/cleaned.csv', index = False)
 
 ##############################################################################
 

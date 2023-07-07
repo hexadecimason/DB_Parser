@@ -6,7 +6,7 @@ from OPIC_Well import OPIC_Well
 badVal = "N/A"
 
 # load CSV into a DF
-master_csv = pd.read_csv('OGS_OCDB/DB_master.csv', low_memory = False)
+master_csv = pd.read_csv('data/DB_master.csv', low_memory = False)
 df_master = pd.DataFrame(master_csv)
 
 # Select known columns: some are filled with blanks and not needed
@@ -21,9 +21,9 @@ df_clean.fillna(badVal, inplace= True)
 # liteRepresentation - more human-readable
 # rawRepresentation - no formatting for readability: data only
 # verBose representation - the original DB as a txt file
-liteRepresentation = open("OGS_OCDB/Output Files/DB_lite.txt", "w") # file to write to
-rawRepresentation = open("OGS_OCDB/Output Files/DB_raw.txt", "w")
-verboseRepresentation = open("OGS_OCDB/Output Files/DB_verbose.txt", "w")
+liteRepresentation = open("data/Output Files/DB_lite.txt", "w") # file to write to
+rawRepresentation = open("data/Output Files/DB_raw.txt", "w")
+verboseRepresentation = open("data/Output Files/DB_verbose.txt", "w")
 all_wells = []
 
 
@@ -129,9 +129,9 @@ verboseRepresentation.close()
 # Size analysis
 
 print("Analyzing file sizes")
-lite_size = os.path.getsize("OGS_OCDB/Output Files/DB_lite.txt")
-raw_size = os.path.getsize("OGS_OCDB/Output Files/DB_raw.txt")
-verbose_size = os.path.getsize("OGS_OCDB/Output Files/DB_verbose.txt")
+lite_size = os.path.getsize("data/Output Files/DB_lite.txt")
+raw_size = os.path.getsize("data/Output Files/DB_raw.txt")
+verbose_size = os.path.getsize("data/Output Files/DB_verbose.txt")
 
 verbose_raw_ratio = float(verbose_size) / float(raw_size)
 
