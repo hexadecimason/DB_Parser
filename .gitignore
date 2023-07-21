@@ -1,1 +1,3 @@
 .db_env/
+project_settings/
+__pycache__/

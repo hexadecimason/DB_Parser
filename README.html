@@ -1,0 +1,93 @@
+<h2 id="rebuilding-core-database">Rebuilding Core Database</h2>
+<h3 id="database-parsing-pipeline">Database Parsing Pipeline</h3>
+<p>In order to create a database of OPIC well data that is useful in the
+scope of other projects and easier to work with internally, the data
+must be cleaned, then restructured and added to a PosgreSQL
+database.</p>
+<p>We do this using two Python script procedures. The file ‘DB_clean.py’
+takes in a master file and produces two output files. One is a cleaned
+CSV (cleaned.csv) where wells have known APIs and box counts. One is a
+cleaned CSV where wells have known APIs box box-level information is
+missing (nullboxes.csv). An analysis of these wells indicates that the
+vast majority (99.6% of 1263 files total) of entries are for boxes of
+chips. These wells will be stored in a separate Postgres table without
+box-level information.</p>
+<p>In summary:</p>
+<p>DB_clean.py produces cleaned CSV files DB_parse.py produces a
+Postgres databse API_analyze.py produces a shorthand analysis of the
+original master CSV file DB_pull.py is a test file for getting output
+from the created database. It is designed to be used from the command
+line.</p>
+<h4 id="api_analyze">API_analyze</h4>
+<p>The output produced by the shorthand analysis is as follows:</p>
+<p>Entries preceeded by ‘##’ indicate aggregate/summary values: others
+are literal column entries.</p>
+<pre><code>Bad APIs:
+
+Bad API Summary: 
+api entry
+Unknown                        105
+Number not in use               75
+## empty field/NaN              37
+## Reassigned                   29
+See Comments                    16
+## Combined into other file      7
+Not Assigned                     2
+## disposal: no API              2
+No API                           1
+Name: count, dtype: int64
+TOTAL:  274
+
+DB entries with no box numbers,  by sample type: 
+Type
+Chips                   1254
+Chips (See Comments)       4
+Whole                      4
+pieces                     1
+Name: count, dtype: int64
+[Finished in 10.8s]</code></pre>
+<h4 id="db_pull">DB_pull</h4>
+<p>The sample output generated in a test of DB_pull.py is as follows.
+This output was produced by querying the database duirectly and not
+parsing files.</p>
+<pre><code>-----------------------------------------------------
+File #:         466
+API:            35073300000000
+Operator:       Texaco
+Lease:          Young
+Well Number:    1
+STR:            27-15N-7W
+QQ:             NW
+[Lat, Long]:    [35.7495724, -97.9342148]
+County:         Kingfisher
+State:          OK
+Field:          Okarche North
+Boxes:          8
+
+Box #: 1    Fm: Oswego      7380    -   7381.8
+Box #: 2    Fm: Oswego      7396.3  -   7388.6
+Box #: 3    Fm: Oswego      7394    -   7396.8
+Box #: 4    Fm: Oswego      7396.8  -   7399.5
+Box #: 5    Fm: Oswego      7399.5  -   7402.4
+Box #: 6    Fm: Oswego      7402.4  -   7405.2
+Box #: 7    Fm: Oswego      7405.2  -   7407.9
+Box #: 8    Fm: Oswego      7407.9  -   7409.4
+-----------------------------------------------------</code></pre>
+<h3 id="structure">Structure</h3>
+<p>In this process, the data will also be restructured such that
+box-level data is nested inside well-level data, reducing overall
+redundancy. The object classes “OPIC_Well” and “OPIC_WellBox” exemplify
+this.</p>
+<h3 id="tools-environment">Tools &amp; Environment</h3>
+<p>Several external libraries are used to create the database. These are
+executed using a virtual environment for better management of
+dependencies, particularly as the scope of this project expands and
+package dependencies get potentially complex.</p>
+<p>A summary of the requirements using “pip freeze” are as follows:</p>
+<pre><code>numpy==1.25.0
+pandas==2.0.3
+psycopg2==2.9.6
+python-dateutil==2.8.2
+pytz==2023.3
+six==1.16.0
+tzdata==2023.3</code></pre>

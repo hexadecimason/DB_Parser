@@ -16,7 +16,7 @@ cleanfile = pd.DataFrame(columns = df_master.columns.values.tolist())
 nullboxes_df = pd.DataFrame(columns = df_master.columns.values.tolist())
 
 cleanMasterDates = False
-separateNullBoxes = True
+separateNullBoxes = False
 
 ##############################################################################
 
@@ -27,7 +27,7 @@ def main():
 	global sub_df # df for expanding each potential cluster of boxes
 	global cleanfile # a cleaned whole file for appending to clean_df
 	global clean_df # final cleaned data
-	global nullboxes_df # 
+	global nullboxes_df # separate file for wells with null box entries: most are chips
 
 	# dates in master file could become auto-formatted
 	# this saves a corrected file if we need it
@@ -52,10 +52,13 @@ def main():
 	# FILTER FOR DOUBLE-NULLS
 	filtered = filtered.dropna(subset = ['Box', 'Total'])
 
-	# CONVERT 'Box' TO INT
+	# CONVERT SOME TO INT
 	filtered['Box'] = filtered['Box'].astype('Int64')
 	filtered['Total'] = filtered['Total'].astype('Int64')
 	filtered['API'] = filtered['API'].astype('Int64')
+	filtered['Sec'] = filtered['Sec'].astype('Int32')
+	filtered['Tw'] = filtered['Tw'].astype('Int32')
+	filtered['Rg'] = filtered['Rg'].astype('Int32')
 
 	# FIX MISSING BOX DATA
 
@@ -99,7 +102,7 @@ def main():
 
 		file_total = len(cleanfile)
 		cleanfile = cleanfile.assign(Total = file_total)
-		print(f, " | adding file: ", cleanfile['File #'].iloc[0])
+		print("cleaned file: ", cleanfile['File #'].iloc[0])
 		clean_df = pd.concat([clean_df, cleanfile], ignore_index = True)
 
 	# SAVE TO FILE
@@ -122,6 +125,13 @@ def parseWellNum(value):
 		wellNum = str(months[terms[1]]) + '-' + str(terms[0])
 
 	return wellNum
+
+# must insert escape characters to comments where " or ' exist
+def parseComment(com):
+	s = str(com)
+	s = s.replace('"', '\\\"').replace("'", "\\\'")
+	return s
+
 
 def addBox(i, boxNum, boxTotal, boxTop, boxBottom):
 
@@ -157,22 +167,10 @@ def addBox(i, boxNum, boxTotal, boxTop, boxBottom):
 		sub_df['Condition'].iloc[i],
 		sub_df['Diameter'].iloc[i],
 		sub_df['Restrictions'].iloc[i],
-		sub_df['Comments'].iloc[i] ]))
+		parseComment(sub_df['Comments'].iloc[i]) ]))
 
 	cleanfile = pd.concat([cleanfile, pd.DataFrame([row_add])], ignore_index = True)
 
 ##############################################################################
 
 main()
-
-
-
-
-
-
-
-
-
-
-
-

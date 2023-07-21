@@ -3,7 +3,7 @@ from OPIC_WellBox import OPIC_WellBox
 class OPIC_Well:
     fileNumber = ''
     boxCount : int = 0
-    boxes = []
+    boxes = [OPIC_WellBox]
     api : int = 0
     operator = ''
     leaseName = ''
@@ -35,7 +35,7 @@ class OPIC_Well:
     # boxNum, top, bottom, fm, dia, sType, bType, cond, rest, com
     def addBox(self, number, top, bottom, fm, dia, sType, bxType, cond, rest, comments):
         bx = OPIC_WellBox(number, top, bottom, fm, dia, sType, bxType, cond, rest, comments)
-        self.boxes.append(bx)
+        (self.boxes).append(bx)
         self.updateWellInterval()
         self.boxCount = len(self.boxes) #= len(self.boxes)
 
@@ -45,20 +45,20 @@ class OPIC_Well:
             self.well_top = 0
             self.well_bottom = 0
             return
-        self.well_top = self.boxes[0].top
-        self.well_bottom = self.boxes[-1].bottom
+        self.well_top = (self.boxes[0]).top
+        self.well_bottom = (self.boxes[-1]).bottom
         return
 
     def __str__(self) -> str:
-        s = 'File: ' + self.fileNumber + ' | Well: ' + self.operator + ' ' + self.wellNum + ' ' + self.leaseName + ' | API: ' + self.api + '\n'
-        s = s + 'Location: ' + str(self.STR) + ', ' + self.QQ + ' | ' + str(self.latLong) + ' | ' + self.county + ', ' + self.state
-        s = s + ' (' + self.field + ' Field)\n'
+        s = 'File: ' + str(self.fileNumber) + ' | Well: ' + str(self.operator) + ' ' + str(self.wellNum) + ' ' + str(self.leaseName) + ' | API: ' + str(self.api) + '\n'
+        s = s + 'Location: ' + str(self.STR) + ', ' + str(self.QQ) + ' | ' + str(self.latLong) + ' | ' + str(self.county) + ', ' + str(self.state)
+        s = s + ' (' + str(self.field) + ' Field)\n'
         s = s + 'Boxes: ' + str(self.boxCount) + ' | Top: ' + str(self.well_top) + ' | Bottom: ' + str(self.well_bottom) + '\n'
-        s = s + '\n-------------------------------\n\n'
+        s = s + '-------------------------------'
 
-        for i in range(len(self.boxes)):
-            s = s + str(self.boxes[i]) + '\n'
+        #for i in range(len(self.boxes)):
+        #    s = s + str(self.boxes[i]) + '\n'
 
-        s = s + '-------------------------------\n'
+        #s = s + '-------------------------------\n'
 
         return s

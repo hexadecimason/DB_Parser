@@ -66,7 +66,7 @@ print("TOTAL: ", sum(bad_api_df['api entry'].value_counts()))
 
 ################# Idenify wells with APIs but nulled box + totals
 '''
-print("\nnulled box files with good APIs: ")
+print("\nfiles with null boxes, good APIs: ")
 nullseries = pd.Series(null_boxes)
 
 print("Total: ", len(np.unique(nullseries)))

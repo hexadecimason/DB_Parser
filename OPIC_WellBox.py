@@ -23,16 +23,16 @@ class OPIC_WellBox:
         self.comments = comments
     
     def __str__(self) -> str:
-        s = 'Box: ' + self.boxNumber + ' | Top: ' + str(self.top) + ' | Bottom: ' + str(self.bottom) + ' | Fm: ' + self.formation + '\n'
-        s = s + '\t' + self.diameter + '" ' + self.sampleType + ', ' + self.condition + ', ' + self.boxType
-        s = s + ' | ' + self.restrictions + '\n\t' + self.comments
+        s = 'Box: ' + str(self.boxNumber) + ' | Top: ' + str(self.top) + ' | Bottom: ' + str(self.bottom) + ' | Fm: ' + str(self.formation) + '\n'
+        s = s + '\t' + str(self.diameter) + '" ' + str(self.sampleType) + ', ' + str(self.condition) + ', ' + str(self.boxType)
+        s = s + ' | ' + str(self.restrictions) + '\n\t' + str(self.comments)
         s = s + '\n'
         
         return s
     
     def __repr__(self) -> str:
-        s = 'Box: ' + self.boxNumber + ' | Top: ' + self.top + ' | Bottom: ' + self.bottom + ' | Fm: ' + self.formation + '\n'
-        s = s + '\t' + self.diameter + '" ' + self.sampleType + ', ' + self.condition + ', ' + self.boxType
-        s = s + ' | Restrictions: ' + self.restrictions + '\n\t' + self.comments
+        s = 'Box: ' + str(self.boxNumber) + ' | Top: ' + str(self.top) + ' | Bottom: ' + str(self.bottom) + ' | Fm: ' + str(self.formation) + '\n'
+        s = s + '\t' + str(self.diameter) + '" ' + str(self.sampleType) + ', ' + str(self.condition) + ', ' + str(self.boxType)
+        s = s + ' | Restrictions: ' + str(self.restrictions) + '\n\t' + str(self.comments)
 
         return s
