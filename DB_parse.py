@@ -7,6 +7,9 @@ from OPIC_Well import OPIC_Well
 # DATABASE VARS
 db_name = 'opic_core'
 
+# include nullboxes.csv?
+nullboxes = True
+
 # helper function: pandas types and PG types don't interact very well by default
 
 def adapt_np64(val):
@@ -18,8 +21,16 @@ register_adapter(np.int64, adapt_np64)
 master_csv = pd.read_csv("data/cleaned.csv")
 master_df = pd.DataFrame(master_csv)
 
+if nullboxes:
+	nullboxes_csv = pd.read_csv("data/nullboxes.csv")	
+	nullboxes_df = pd.DataFrame(nullboxes_csv)
+	nullboxes_df['Box'] = nullboxes_df['Box'].fillna(np.nan).replace([np.nan], None)
+
+	master_df = pd.concat([master_df, nullboxes_df])
+
 well_list = []
 
+# structure wells with boxes
 for file in master_df["File #"].unique():
 
 	# separate file
@@ -27,7 +38,7 @@ for file in master_df["File #"].unique():
 
 	# create well object
 	well = OPIC_Well(file, 
-           int(sub_df['Total'].iloc[0]), 
+           (sub_df['Total'].iloc[0]), 
            sub_df['API'].iloc[0], 
            sub_df['Operator'].iloc[0],
            sub_df['Lease'].iloc[0],
@@ -67,6 +78,7 @@ con = ppg2.connect("user=postgres password=p@ssw0rd")
 con.autocommit = True
 cursor = con.cursor()
 cursor.execute(f"""DROP DATABASE IF EXISTS {db_name};""")
+# can't create a table if an old version already
 cursor.execute("DROP TABLE IF EXISTS wells;")
 cursor.execute("DROP TYPE IF EXISTS public.box;")
 cursor.execute(f"""CREATE DATABASE {db_name};""")
@@ -74,7 +86,8 @@ cursor.execute(f"""CREATE DATABASE {db_name};""")
 # CONNECT TO DB
 con = ppg2.connect(f"dbname={db_name} user=postgres password=p@ssw0rd")
 cursor = con.cursor() # reset cursor to new DB
-cursor.execute("DROP TABLE IF EXISTS wells;")
+# can't create a table if an old version already
+cursor.execute("DROP TABLE IF EXISTS wells;") 
 cursor.execute("DROP TYPE IF EXISTS public.box;")
 
 # SET UP DB

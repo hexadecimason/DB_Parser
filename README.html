@@ -1,24 +1,33 @@
-<h2 id="rebuilding-core-database">Rebuilding Core Database</h2>
-<h3 id="database-parsing-pipeline">Database Parsing Pipeline</h3>
+<h1 id="rebuilding-core-database"><strong><em>Rebuilding Core
+Database</em></strong></h1>
+<h2 id="database-parsing-pipeline"><strong><em>Database Parsing
+Pipeline</em></strong></h2>
 <p>In order to create a database of OPIC well data that is useful in the
 scope of other projects and easier to work with internally, the data
 must be cleaned, then restructured and added to a PosgreSQL
 database.</p>
-<p>We do this using two Python script procedures. The file ‘DB_clean.py’
-takes in a master file and produces two output files. One is a cleaned
-CSV (cleaned.csv) where wells have known APIs and box counts. One is a
-cleaned CSV where wells have known APIs box box-level information is
-missing (nullboxes.csv). An analysis of these wells indicates that the
+<p>We do this using two Python script procedures. The file
+<strong>DB_clean.py</strong> takes in a master file and produces two
+output files. One is a cleaned CSV (<em>cleaned.csv</em>) where wells
+have known APIs and box counts. One is a cleaned CSV where wells have
+known APIs box box-level information is missing
+(<em>nullboxes.csv</em>). An analysis of these wells indicates that the
 vast majority (99.6% of 1263 files total) of entries are for boxes of
-chips. These wells will be stored in a separate Postgres table without
-box-level information.</p>
+chips. These files will be parsed together to form one psotgres
+table.</p>
+<p>The file <strong>DB_parse.py</strong> uses the <em>psycopg2</em>
+library to create, structure, and fill a new Postgres database. It
+features the option to either include or exclude <em>nullboxes.csv</em>.
+Boxes from <em>nullboxes.csv</em> will appear along side the other
+numbered boxes, but will have “None” in place of a number.</p>
+<p><strong>DB_cli.py</strong> is a test file for getting output from the
+created database. It is designed to be used from the command line.</p>
 <p>In summary:</p>
-<p>DB_clean.py produces cleaned CSV files DB_parse.py produces a
-Postgres databse API_analyze.py produces a shorthand analysis of the
-original master CSV file DB_pull.py is a test file for getting output
-from the created database. It is designed to be used from the command
-line.</p>
-<h4 id="api_analyze">API_analyze</h4>
+<p><em>DB_clean.py</em> produces cleaned CSV files</p>
+<p><em>DB_parse.py</em> produces a Postgres table</p>
+<p><em>API_analyze.py</em> produces a shorthand analysis of the original
+master CSV file</p>
+<h3 id="api_analyze"><strong><em>API_analyze</em></strong></h3>
 <p>The output produced by the shorthand analysis is as follows:</p>
 <p>Entries preceeded by ‘##’ indicate aggregate/summary values: others
 are literal column entries.</p>
@@ -46,10 +55,12 @@ Whole                      4
 pieces                     1
 Name: count, dtype: int64
 [Finished in 10.8s]</code></pre>
-<h4 id="db_pull">DB_pull</h4>
-<p>The sample output generated in a test of DB_pull.py is as follows.
-This output was produced by querying the database duirectly and not
+<h3 id="db_cli"><strong><em>DB_cli</em></strong></h3>
+<p>The sample output generated in a test of DB_cli.py is as follows.
+This output was produced by querying the database directly and not
 parsing files.</p>
+<p>Note: this file requires the activation of the ‘.db_env’ python
+environment.</p>
 <pre><code>-----------------------------------------------------
 File #:         466
 API:            35073300000000
@@ -73,16 +84,17 @@ Box #: 6    Fm: Oswego      7402.4  -   7405.2
 Box #: 7    Fm: Oswego      7405.2  -   7407.9
 Box #: 8    Fm: Oswego      7407.9  -   7409.4
 -----------------------------------------------------</code></pre>
-<h3 id="structure">Structure</h3>
+<h2 id="structure"><strong><em>Structure</em></strong></h2>
 <p>In this process, the data will also be restructured such that
 box-level data is nested inside well-level data, reducing overall
 redundancy. The object classes “OPIC_Well” and “OPIC_WellBox” exemplify
 this.</p>
-<h3 id="tools-environment">Tools &amp; Environment</h3>
+<h2 id="tools-environment"><strong><em>Tools &amp;
+Environment</em></strong></h2>
 <p>Several external libraries are used to create the database. These are
 executed using a virtual environment for better management of
-dependencies, particularly as the scope of this project expands and
-package dependencies get potentially complex.</p>
+dependencies, particularly as the scope of this project is not yet
+fully.</p>
 <p>A summary of the requirements using “pip freeze” are as follows:</p>
 <pre><code>numpy==1.25.0
 pandas==2.0.3
@@ -91,3 +103,6 @@ python-dateutil==2.8.2
 pytz==2023.3
 six==1.16.0
 tzdata==2023.3</code></pre>
+<p>Note that this is a list of dependencies from the virtual environment
+used and does not reflect what is present in “import ____”
+statements.</p>

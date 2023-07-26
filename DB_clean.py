@@ -16,7 +16,7 @@ cleanfile = pd.DataFrame(columns = df_master.columns.values.tolist())
 nullboxes_df = pd.DataFrame(columns = df_master.columns.values.tolist())
 
 cleanMasterDates = False
-separateNullBoxes = False
+resetAPIs = False
 
 ##############################################################################
 
@@ -29,32 +29,53 @@ def main():
 	global clean_df # final cleaned data
 	global nullboxes_df # separate file for wells with null box entries: most are chips
 
+	# Excel auto-formatting can cut off API values
+	# this saves a corrected file
+	global resetAPIs
+	if resetAPIs:
+		ocdb_csv = pd.read_csv('data/XLS_backup.csv', low_memory = False)
+		ocdb_df = pd.DataFrame(ocdb_csv)
+
+		for file in df_master['File #'].unique():
+			print("fixing API value: ", file)
+			api = ocdb_df[ocdb_df['File #'] == file]['API'].iloc[0]
+			df_master['API'][df_master['File #'] == file] = api
+
+		df_master.to_csv('data/DB_master_cleanAPIs.csv', index = False)
+		print('saved new file with fixed auto-formatted API values')
+		print('verify corrections and reassign this file to be the new master file')
+		exit()
+
 	# dates in master file could become auto-formatted
 	# this saves a corrected file if we need it
 	global cleanMasterDates
 	if cleanMasterDates:
+		print('fixing well number formatting...')
 		df_master['Well #'] = df_master['Well #'].apply(parseWellNum)
 		df_master.to_csv('data/DB_master_cleandates.csv', index = False)
+
+		print("saved new file with fixed auto-formatted well numbers")
+		print('verify corrections and reassign this file to be the new master file')
+		exit()
 
 	# FILTER DF FOR GOOD APIs
 	df_master = df_master.dropna(subset = 'API') # drop empty values
 	filtered = df_master[df_master['API'].str.isdecimal()] # drop text entries
 
-	# FILTER FOR "A/C files"
+	# FILTER FOR "A/C" files
 	filtered = filtered[filtered['File #'] != 'A/C']
 
 	# save df where box fields are null
-	if separateNullBoxes:
-		nullboxes_df = filtered[filtered['Box'].isna() & filtered['Total'].isna()]
-		nullboxes_df.to_csv('data/nullboxes.csv', index = False)
-		print('saved null box data')
+	nullboxes_df = filtered[filtered['Box'].isna() & filtered['Total'].isna()]
+	nullboxes_df.to_csv('data/nullboxes.csv', index = False)
+	print('saved null box data')
 
 	# FILTER FOR DOUBLE-NULLS
 	filtered = filtered.dropna(subset = ['Box', 'Total'])
 
-	# CONVERT SOME TO INT
-	filtered['Box'] = filtered['Box'].astype('Int64')
-	filtered['Total'] = filtered['Total'].astype('Int64')
+	# VERIFY TYPES
+	filtered['Box'] = filtered['Box'].astype('Int32')
+	filtered['Total'] = filtered['Total'].astype('Int32')
 	filtered['API'] = filtered['API'].astype('Int64')
 	filtered['Sec'] = filtered['Sec'].astype('Int32')
 	filtered['Tw'] = filtered['Tw'].astype('Int32')
@@ -106,6 +127,7 @@ def main():
 		clean_df = pd.concat([clean_df, cleanfile], ignore_index = True)
 
 	# SAVE TO FILE
+	print("saving CSV file...")
 	clean_df.to_csv('data/cleaned.csv', index = False)
 
 ##############################################################################

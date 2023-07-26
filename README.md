@@ -1,19 +1,26 @@
-## Rebuilding Core Database
+# ***Rebuilding Core Database***
 
-### Database Parsing Pipeline
+## ***Database Parsing Pipeline***
 
 In order to create a database of OPIC well data that is useful in the scope of other projects and easier to work with internally, the data must be cleaned, then restructured and added to a PosgreSQL database.
 
-We do this using two Python script procedures. The file 'DB_clean.py' takes in a master file and produces two output files. One is a cleaned CSV (cleaned.csv) where wells have known APIs and box counts. One is a cleaned CSV where wells have known APIs box box-level information is missing (nullboxes.csv). An analysis of these wells indicates that the vast majority (99.6% of 1263 files total) of entries are for boxes of chips. These wells will be stored in a separate Postgres table without box-level information.
+We do this using two Python script procedures. The file **DB_clean.py** takes in a master file and produces two output files. One is a cleaned CSV (*cleaned.csv*) where wells have known APIs and box counts. One is a cleaned CSV where wells have known APIs box box-level information is missing (*nullboxes.csv*). An analysis of these wells indicates that the vast majority (99.6% of 1263 files total) of entries are for boxes of chips. These files will be parsed together to form one psotgres table.
+
+The file **DB_parse.py** uses the *psycopg2* library to create, structure, and fill a new Postgres database. It features the option to either include or exclude *nullboxes.csv*. Boxes from *nullboxes.csv* will appear along side the other numbered boxes, but will have "None" in place of a number.
+
+**DB_cli.py** is a test file for getting output from the created database. It is  designed to be used from the command line.
 
 In summary:
 
-DB_clean.py produces cleaned CSV files
-DB_parse.py produces a Postgres databse
-API_analyze.py produces a shorthand analysis of the original master CSV file
-DB_pull.py is a test file for getting output from the created database. It is designed to be used from the command line.
+*DB_clean.py* produces cleaned CSV files
 
-#### API_analyze
+*DB_parse.py* produces a Postgres table
+
+*API_analyze.py* produces a shorthand analysis of the original master CSV file
+
+
+
+### ***API_analyze***
 
 The output produced by the shorthand analysis is as follows:
 
@@ -46,9 +53,11 @@ Name: count, dtype: int64
 [Finished in 10.8s]
 ```
 
-#### DB_pull
+### ***DB_cli***
 
-The sample output generated in a test of DB_pull.py is as follows. This output was produced by querying the database duirectly and not parsing files.
+The sample output generated in a test of DB_cli.py is as follows. This output was produced by querying the database directly and not parsing files.
+
+Note: this file requires the activation of the '.db_env' python environment.
 
 ```
 -----------------------------------------------------
@@ -76,13 +85,13 @@ Box #: 8	Fm: Oswego		7407.9	-	7409.4
 -----------------------------------------------------
 ```
 
-### Structure
+## ***Structure***
 
 In this process, the data will also be restructured such that box-level data is nested inside well-level data, reducing overall redundancy. The object classes "OPIC_Well" and "OPIC_WellBox" exemplify this.
 
-### Tools & Environment
+## ***Tools & Environment***
 
-Several external libraries are used to create the database. These are executed using a virtual environment for better management of dependencies, particularly as the scope of this project expands and package dependencies get potentially complex.
+Several external libraries are used to create the database. These are executed using a virtual environment for better management of dependencies, particularly as the scope of this project is not yet fully.
 
 A summary of the requirements using "pip freeze" are as follows:
 
@@ -95,3 +104,5 @@ pytz==2023.3
 six==1.16.0
 tzdata==2023.3
 ```
+
+Note that this is a list of dependencies from the virtual environment used and does not reflect what is present in "import ____" statements.
