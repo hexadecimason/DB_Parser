@@ -1,8 +1,9 @@
+import time
 import pandas as pd
 import numpy as np
-import time
 import psycopg2 as ppg2
 from psycopg2.extensions import register_adapter, AsIs
+from OPIC_Well import OPIC_Well
 
 # DATABASE VARS
 db_name = 'opic_core'
@@ -39,41 +40,38 @@ for file in master_df["File #"].unique():
 	sub_df = master_df[master_df["File #"] == file]
 
 	# create well object
-
-	well = {'file' : file, 
-           'total_boxes' : 0,#(sub_df['Total'].iloc[0]), 
-           'api' : sub_df['API'].iloc[0], 
-           'operator' : sub_df['Operator'].iloc[0],
-           'lease' : sub_df['Lease'].iloc[0],
-           'well #' : sub_df['Well #'].iloc[0],
-           'sec' : sub_df['Sec'].iloc[0],
-           'tw' : sub_df['Tw'].iloc[0],
-           'tw_d' : sub_df['TwD'].iloc[0],
-           'rg' : sub_df['Rg'].iloc[0],
-           'rg_d' : sub_df['RgD'].iloc[0],
-           'qq' : sub_df['Quarter'].iloc[0],
-           'lat' : sub_df['Latitude'].iloc[0],
-           'long' : sub_df['Longitude'].iloc[0],
-           'county' : sub_df['County'].iloc[0],
-           'state' : sub_df['State'].iloc[0],
-           'field' : sub_df['Field'].iloc[0],
-           'boxes' : []}
+	well = OPIC_Well(file, 
+           (sub_df['Total'].iloc[0]), 
+           sub_df['API'].iloc[0], 
+           sub_df['Operator'].iloc[0],
+           sub_df['Lease'].iloc[0],
+           sub_df['Well #'].iloc[0],
+           sub_df['Sec'].iloc[0],
+           sub_df['Tw'].iloc[0],
+           sub_df['TwD'].iloc[0],
+           sub_df['Rg'].iloc[0],
+           sub_df['RgD'].iloc[0],
+           sub_df['Quarter'].iloc[0],
+           sub_df['Latitude'].iloc[0],
+           sub_df['Longitude'].iloc[0],
+           sub_df['County'].iloc[0],
+           sub_df['State'].iloc[0],
+           sub_df['Field'].iloc[0])
 
 	# add boxes
 	for line in range(len(sub_df['File #'])):
-		box_dict = {'box #' : sub_df['Box'].iloc[line],
-						'top' : sub_df['Top'].iloc[line],
-						'bottom' : sub_df['Bottom'].iloc[line],
-						'fm' : sub_df['Formation'].iloc[line],
-						'dia' : sub_df['Diameter'].iloc[line],
-						'bType' : sub_df['Box Type'].iloc[line],
-						'sType' : sub_df['Type'].iloc[line],
-						'cond' : sub_df['Condition'].iloc[line],
-						'rest' : sub_df['Restrictions'].iloc[line],
-						'com' : sub_df['Comments'].iloc[line]}
+		boxNum = sub_df['Box'].iloc[line]
+		top = sub_df['Top'].iloc[line]
+		bottom = sub_df['Bottom'].iloc[line]
+		fm = sub_df['Formation'].iloc[line]
+		dia = sub_df['Diameter'].iloc[line]
+		bType = sub_df['Box Type'].iloc[line]
+		sType = sub_df['Type'].iloc[line]
+		cond = sub_df['Condition'].iloc[line]
+		rest = sub_df['Restrictions'].iloc[line]
+		com = sub_df['Comments'].iloc[line]
 
-		well['boxes'].append(box_dict)
-		well['total_boxes'] += 1
+		well.addBox(boxNum, top, bottom, fm, dia, sType, bType, cond, rest, com)
 
 	# add to list of well objects
 	well_list.append(well)
@@ -141,12 +139,12 @@ for well in well_list:
 				(%s, %s, %s, %s, %s, %s, %s, %s, %s,
 				%s, %s, %s, %s, %s, %s, %s, %s);"""
 
-	addWell_tuple = (well['file'], well['api'], well['total_boxes'],
-					well['operator'], well['lease'], well['well #'],
-					well['sec'], well['tw'], well['tw_d'],
-					well['rg'], well['rg_d'], well['qq'],
-					well['lat'], well['long'],
-					well['county'], well['state'], well['field'])
+	addWell_tuple = (well.fileNumber, well.api, well.boxCount,
+					well.operator, well.leaseName, well.wellNum,
+					well.STR[0], well.STR[1], well.STR[2],
+					well.STR[3], well.STR[4], well.QQ,
+					well.latLong[0], well.latLong[1],
+					well.county, well.state, well.field)
 
 	cursor.execute(addWell_query, addWell_tuple)
 
@@ -156,15 +154,14 @@ for well in well_list:
 						) WHERE file = %s;"""
 
 
-	for bx in well['boxes']:
+	for bx in well.boxes:
 
-		addBox_tuple = (bx['box #'], bx['fm'], bx['top'],
-						bx['bottom'], bx['dia'], bx['bType'],
-						bx['sType'], bx['cond'], bx['rest'],
-						bx['com'], well['file'])
+		addBox_tuple = (bx.boxNumber, bx.formation, bx.top,
+						bx.bottom, bx.diameter, bx.boxType,
+						bx.sampleType, bx.condition, bx.restrictions,
+						bx.comments, well.fileNumber)
 
 		cursor.execute(addBox_query, addBox_tuple)
-
 
 # COMMIT
 con.commit()

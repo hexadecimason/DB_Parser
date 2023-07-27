@@ -73,7 +73,7 @@ def main():
 	# FILTER FOR DOUBLE-NULLS
 	filtered = filtered.dropna(subset = ['Box', 'Total'])
 
-	# VERIFY TYPES
+	# VERIFY TYPES - capital prefixes (Int vs int) allow for pd.NaN values
 	filtered['Box'] = filtered['Box'].astype('Int32')
 	filtered['Total'] = filtered['Total'].astype('Int32')
 	filtered['API'] = filtered['API'].astype('Int64')
