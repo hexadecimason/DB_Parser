@@ -2,107 +2,71 @@
 
 ## ***Database Parsing Pipeline***
 
-In order to create a database of OPIC well data that is useful in the scope of other projects and easier to work with internally, the data must be cleaned, then restructured and added to a PosgreSQL database.
+In order to create a database of OPIC well data that is useful in the scope of other projects and easier to work with internally, the data must be cleaned, then restructured and added to a PosgreSQL database. This is done in the following sequence:
 
-We do this using two Python script procedures. The file **DB_clean.py** takes in a master file and produces two output files. One is a cleaned CSV (*cleaned.csv*) where wells have known APIs and box counts. One is a cleaned CSV where wells have known APIs box box-level information is missing (*nullboxes.csv*). An analysis of these wells indicates that the vast majority (99.6% of 1263 files total) of entries are for boxes of chips. These files will be parsed together to form one psotgres table.
+(1) **DB_clean.py** 
 
-The file **DB_parse.py** uses the *psycopg2* library to create, structure, and fill a new Postgres database. It features the option to either include or exclude *nullboxes.csv*. Boxes from *nullboxes.csv* will appear along side the other numbered boxes, but will have "None" in place of a number.
+This script is used locally to input the original data as a CSV, correct potentially errant values (the consequence of Excel preserving auto-formatted vlaues), and parse it into two files with all box-level data present. One file contains all entries where we can determine total boxes represented by the entry (*cleaned.csv*). The other contains entires where 'box number' and 'box total' are *both* null, and so the total number of boxes represented in these rows cannot be determined (*nullboxes.csv*). However, these entries have APIs and there is relevant depth and formation data and so these entries will be included in the final database, but require applying a slightly different procedure to add to the Postgres instance.
 
-**DB_cli.py** is a test file for getting output from the created database. It is  designed to be used from the command line.
+Note that in analyzing the entries with no box counts, we determined these to be almost entirely boxes of chips (~ 99.6%), some of which accompany wells with numbered boxes; others do not and are in wells for which we only have boxes of chips.
 
-In summary:
+Of the original wells in our Excel database, there are a total of 274 for which there is no valid API entry: DB_clean.py will exclude these.
 
-*DB_clean.py* produces cleaned CSV files
+(2) **DB_parse.py** 
 
-*DB_parse.py* produces a Postgres table
+This uses the *psycopg2* library as an adapter for PostgreSQL to create, structure, and fill a new Postgres database. It features the option to either include or exclude *nullboxes.csv*. Boxes from *nullboxes.csv* will appear along side the other numbered boxes, but will have "None" in place of a number.
 
-*API_analyze.py* produces a shorthand analysis of the original master CSV file
+## ***PostgreSQL Database Structure***
+
+The Postgres instance contains a table, 'wells,' composed of the well-level data from the original database (File #, API, Operator, Lease, etc.), as well as an array of boxes. The array of boxes will be defined by a TYPE for all box-level data (see **DB_parse.py** for details of the type definition).
+
+This structure is more intuitive than our previous implementation where every row represents a single box, or group of boxes. Previously, well-level data was duplicated for every box. This created inherent redundancy
+
+## ***Interface to Databse***
+
+Currently, the database is stored locally and accessed with a Python program (***DB_cli.py***) that acts as a command line interface (CLI). A Python virtual environment is required for the CLI program to work. It showcases the basic functionality of the Postgres instance in providing a source for pulling data. It provides methods for querying based on File # and API. It also provides methods for fuzzy searching on Operator and Lease.
 
 
+### ***File Query***
 
-### ***API_analyze***
-
-The output produced by the shorthand analysis is as follows:
-
-Entries preceeded by '##' indicate aggregate/summary values: others are literal column entries.
-
-```
-Bad APIs:
-
-Bad API Summary: 
-api entry
-Unknown                        105
-Number not in use               75
-## empty field/NaN              37
-## Reassigned                   29
-See Comments                    16
-## Combined into other file      7
-Not Assigned                     2
-## disposal: no API              2
-No API                           1
-Name: count, dtype: int64
-TOTAL:  274
-
-DB entries with no box numbers,  by sample type: 
-Type
-Chips                   1254
-Chips (See Comments)       4
-Whole                      4
-pieces                     1
-Name: count, dtype: int64
-[Finished in 10.8s]
-```
-
-### ***DB_cli***
-
-The sample output generated in a test of DB_cli.py is as follows. This output was produced by querying the database directly and not parsing files.
-
-Note: this file requires the activation of the '.db_env' python environment.
+Sample output for DB_cli.py is as follows for a query for file '1A':
 
 ```
------------------------------------------------------
-File #: 		466
-API: 			35073300000000
-Operator: 		Texaco
-Lease: 			Young
-Well Number: 	1
-STR: 			27-15N-7W
-QQ: 			NW
-[Lat, Long]: 	[35.7495724, -97.9342148]
-County: 		Kingfisher
-State: 			OK
-Field: 			Okarche North
-Boxes: 			8
+$ python DB_cli.py
+enter query type: FILE / API / OPERATOR / LEASE (Q to quit)
+file
+include box-level data? (Y to confirm): y
+enter file number: 1A
+----------------------------------------------
+File #:                 1A
+API:                    35073355020000
+Operator:               King & Stevenson
+Lease:                  Kudlac
+Well #:                 1
+STR:                    [15, 19, 'N', 6, 'W']
+QQ:                     C NE SE
+[Lat, Long]:            [36.1217518, -97.8198849]
+County:                 Kingfisher
+State:                  OK
+Field:                  Dover-Hennessey
+Boxes:                  7
 
-Box #: 1	Fm: Oswego		7380	-	7381.8
-Box #: 2	Fm: Oswego		7396.3	-	7388.6
-Box #: 3	Fm: Oswego		7394	-	7396.8
-Box #: 4	Fm: Oswego		7396.8	-	7399.5
-Box #: 5	Fm: Oswego		7399.5	-	7402.4
-Box #: 6	Fm: Oswego		7402.4	-	7405.2
-Box #: 7	Fm: Oswego		7405.2	-	7407.9
-Box #: 8	Fm: Oswego		7407.9	-	7409.4
------------------------------------------------------
-```
 
-## ***Structure***
-
-In this process, the data will also be restructured such that box-level data is nested inside well-level data, reducing overall redundancy. The object classes "OPIC_Well" and "OPIC_WellBox" exemplify this.
-
-## ***Tools & Environment***
-
-Several external libraries are used to create the database. These are executed using a virtual environment for better management of dependencies, particularly as the scope of this project is not yet fully.
-
-A summary of the requirements using "pip freeze" are as follows:
+Box #: 1        6688 - 6697     Fm: Maramecian  Slab Pack Box/3"/Slab           Condition: Good         Restrictions: NaN       Comments: 10\' for 5 Slot Box
+Box #: 2        6697 - 6709     Fm: Maramecian  Slab Pack Box/3"/Slab           Condition: Good         Restrictions: NaN       Comments: 12\' for 6 Slot Box
+Box #: 3        6709 - 6721     Fm: Maramecian  Slab Pack Box/3"/Slab           Condition: Good         Restrictions: NaN       Comments: 12\' for 6 Slot Box
+Box #: 4        6721 - 6733     Fm: Maramecian  Slab Pack Box/3"/Slab           Condition: Good         Restrictions: NaN       Comments: 12\' for 6 Slot Box
+Box #: 5        6733 - 6745     Fm: Maramecian  Slab Pack Box/3"/Slab           Condition: Good         Restrictions: NaN       Comments: 12\' for 6 Slot Box
+Box #: 6        6745 - 6757     Fm: Maramecian  Slab Pack Box/3"/Slab           Condition: Good         Restrictions: NaN       Comments: 12\' for 6 Slot Box
+Box #: 7        6757 - 6765     Fm: Maramecian  Slab Pack Box/3"/Slab           Condition: Good         Restrictions: NaN       Comments: 12\' for 6 Slot Box
+----------------------------------------------
 
 ```
-numpy==1.25.0
-pandas==2.0.3
-psycopg2==2.9.6
-python-dateutil==2.8.2
-pytz==2023.3
-six==1.16.0
-tzdata==2023.3
-```
 
-Note that this is a list of dependencies from the virtual environment used and does not reflect what is present in "import ____" statements.
+## ***Future Progress***
+
+Going forward, we can expand searching capabilities. For instance, we could implement features for restricting a search to particular STR or Lat/Long values. We could also provide features for searching by Formation or other box-level data such as depths or sample type/condition.
+
+As the databse becomes more widely used, an API written in python will be useful both for ensuring the integrity of the databse and also for providing easier access to common query operations. An API will provide access to box-level data for other projects such as the WellViewer; it will also enable reconstruction of internal databse tooling and allow for the avoidance of large-scale Excel files that rely heavily on macros and frequently re-format data.
+
+Finally, in order to be deployed the database will need to persist on a server environment that can be readily connected to.

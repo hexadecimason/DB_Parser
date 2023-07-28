@@ -13,24 +13,28 @@ cursor.execute("""CREATE VIEW wellview AS SELECT
 					county, state, field
 				FROM wells;""")
 
+# takes in a non-empty cursor.fetch_all() object and returns a list of dictionaries of well data
+def parse_q(q):
 
-def parse_well(q_well):
+	if len(q) == 0:
+		print("not in database")
+		return -1
 
 	wells = []
 
-	for w in range(len(q_well)):
-		well = {'file' : q_well[w]['file'],
-				'API' : q_well[w]['api'],
-				'operator' : q_well[w]['operator'],
-				'lease' : q_well[w]['lease'],
-				'well_num' : q_well[w]['well_num'],
-				'str' : [q_well[w]['sec'], q_well[w]['town'], q_well[w]['town_d'], q_well[w]['range'], q_well[w]['range_d']],
-				'qq' : q_well[w]['qq'],
-				'll' : [q_well[w]['latitude'], q_well[w]['longitude']],
-				'county' : q_well[w]['county'],
-				'state' : q_well[w]['state'],
-				'field' : q_well[w]['field'],
-				'boxcount' : q_well[w]['boxcount'],
+	for w in range(len(q)):
+		well = {'file' : q[w]['file'],
+				'API' : q[w]['api'],
+				'operator' : q[w]['operator'],
+				'lease' : q[w]['lease'],
+				'well_num' : q[w]['well_num'],
+				'str' : [q[w]['sec'], q[w]['town'], q[w]['town_d'], q[w]['range'], q[w]['range_d']],
+				'qq' : q[w]['qq'],
+				'll' : [q[w]['latitude'], q[w]['longitude']],
+				'county' : q[w]['county'],
+				'state' : q[w]['state'],
+				'field' : q[w]['field'],
+				'boxcount' : q[w]['boxcount'],
 				'boxes' : []}
 
 		file_num = well['file']
@@ -49,20 +53,11 @@ def parse_well(q_well):
 				'sample type' : q[b]['sampletype'],
 				'condition' : q[b]['condition'],
 				'restrictions' : q[b]['restrictions'],
-				'comments' : q[b]['comments']
-			}
+				'comments' : q[b]['comments']}
 
 			well['boxes'].append(bx)
 		wells.append(well)
 
-	return wells
-
-def parse_query(q):
-	if len(q) == 0:
-		print("not in database")
-		return -1
-
-	wells = parse_well(q)
 	return wells
 
 def print_output(wells, include_boxes):
@@ -124,12 +119,10 @@ def main():
 			print("exiting program...")
 			exit()
 		case other:
-			print("invalid query type...")
+			print("invalid query type...\n")
 			main()
 
-	wells = parse_query(cursor.fetchall())
+	wells = parse_q(cursor.fetchall())
 	print_output(wells, include_boxes)
 
 main()
-
-# 35073400000000

@@ -1,0 +1,104 @@
+<h1 id="rebuilding-core-database"><strong><em>Rebuilding Core
+Database</em></strong></h1>
+<h2 id="database-parsing-pipeline"><strong><em>Database Parsing
+Pipeline</em></strong></h2>
+<p>In order to create a database of OPIC well data that is useful in the
+scope of other projects and easier to work with internally, the data
+must be cleaned, then restructured and added to a PosgreSQL database.
+This is done in the following sequence:</p>
+<ol type="1">
+<li><strong>DB_clean.py</strong></li>
+</ol>
+<p>This script is used locally to input the original data as a CSV,
+correct potentially errant values (the consequence of Excel preserving
+auto-formatted vlaues), and parse it into two files with all box-level
+data present. One file contains all entries where we can determine total
+boxes represented by the entry (<em>cleaned.csv</em>). The other
+contains entires where ‘box number’ and ‘box total’ are <em>both</em>
+null, and so the total number of boxes represented in these rows cannot
+be determined (<em>nullboxes.csv</em>). However, these entries have APIs
+and there is relevant depth and formation data and so these entries will
+be included in the final database, but require applying a slightly
+different procedure to add to the Postgres instance.</p>
+<p>Note that in analyzing the entries with no box counts, we determined
+these to be almost entirely boxes of chips (~ 99.6%), some of which
+accompany wells with numbered boxes; others do not and are in wells for
+which we only have boxes of chips.</p>
+<p>Of the original wells in our Excel database, there are a total of 274
+for which there is no valid API entry: DB_clean.py will exclude
+these.</p>
+<ol start="2" type="1">
+<li><strong>DB_parse.py</strong></li>
+</ol>
+<p>This uses the <em>psycopg2</em> library as an adapter for PostgreSQL
+to create, structure, and fill a new Postgres database. It features the
+option to either include or exclude <em>nullboxes.csv</em>. Boxes from
+<em>nullboxes.csv</em> will appear along side the other numbered boxes,
+but will have “None” in place of a number.</p>
+<h2 id="postgresql-database-structure"><strong><em>PostgreSQL Database
+Structure</em></strong></h2>
+<p>The Postgres instance contains a table, ‘wells,’ composed of the
+well-level data from the original database (File #, API, Operator,
+Lease, etc.), as well as an array of boxes. The array of boxes will be
+defined by a TYPE for all box-level data (see
+<strong>DB_parse.py</strong> for details of the type definition).</p>
+<p>This structure is more intuitive than our previous implementation
+where every row represents a single box, or group of boxes. Previously,
+well-level data was duplicated for every box. This created inherent
+redundancy</p>
+<h2 id="interface-to-databse"><strong><em>Interface to
+Databse</em></strong></h2>
+<p>Currently, the database is stored locally and accessed with a Python
+program (<strong><em>DB_cli.py</em></strong>) that acts as a command
+line interface (CLI). A Python virtual environment is required for the
+CLI program to work. It showcases the basic functionality of the
+Postgres instance in providing a source for pulling data. It provides
+methods for querying based on File # and API. It also provides methods
+for fuzzy searching on Operator and Lease.</p>
+<h3 id="file-query"><strong><em>File Query</em></strong></h3>
+<p>Sample output for DB_cli.py is as follows for a query for file
+‘1A’:</p>
+<pre><code>$ python DB_cli.py
+enter query type: FILE / API / OPERATOR / LEASE (Q to quit)
+file
+include box-level data? (Y to confirm): y
+enter file number: 1A
+----------------------------------------------
+File #:                 1A
+API:                    35073355020000
+Operator:               King &amp; Stevenson
+Lease:                  Kudlac
+Well #:                 1
+STR:                    [15, 19, &#39;N&#39;, 6, &#39;W&#39;]
+QQ:                     C NE SE
+[Lat, Long]:            [36.1217518, -97.8198849]
+County:                 Kingfisher
+State:                  OK
+Field:                  Dover-Hennessey
+Boxes:                  7
+
+
+Box #: 1        6688 - 6697     Fm: Maramecian  Slab Pack Box/3&quot;/Slab           Condition: Good         Restrictions: NaN       Comments: 10\&#39; for 5 Slot Box
+Box #: 2        6697 - 6709     Fm: Maramecian  Slab Pack Box/3&quot;/Slab           Condition: Good         Restrictions: NaN       Comments: 12\&#39; for 6 Slot Box
+Box #: 3        6709 - 6721     Fm: Maramecian  Slab Pack Box/3&quot;/Slab           Condition: Good         Restrictions: NaN       Comments: 12\&#39; for 6 Slot Box
+Box #: 4        6721 - 6733     Fm: Maramecian  Slab Pack Box/3&quot;/Slab           Condition: Good         Restrictions: NaN       Comments: 12\&#39; for 6 Slot Box
+Box #: 5        6733 - 6745     Fm: Maramecian  Slab Pack Box/3&quot;/Slab           Condition: Good         Restrictions: NaN       Comments: 12\&#39; for 6 Slot Box
+Box #: 6        6745 - 6757     Fm: Maramecian  Slab Pack Box/3&quot;/Slab           Condition: Good         Restrictions: NaN       Comments: 12\&#39; for 6 Slot Box
+Box #: 7        6757 - 6765     Fm: Maramecian  Slab Pack Box/3&quot;/Slab           Condition: Good         Restrictions: NaN       Comments: 12\&#39; for 6 Slot Box
+----------------------------------------------
+</code></pre>
+<h2 id="future-progress"><strong><em>Future Progress</em></strong></h2>
+<p>Going forward, we can expand searching capabilities. For instance, we
+could implement features for restricting a search to particular STR or
+Lat/Long values. We could also provide features for searching by
+Formation or other box-level data such as depths or sample
+type/condition.</p>
+<p>As the databse becomes more widely used, an API written in python
+will be useful both for ensuring the integrity of the databse and also
+for providing easier access to common query operations. An API will
+provide access to box-level data for other projects such as the
+WellViewer; it will also enable reconstruction of internal databse
+tooling and allow for the avoidance of large-scale Excel files that rely
+heavily on macros and frequently re-format data.</p>
+<p>Finally, in order to be deployed the database will need to persist on
+a server environment that can be readily connected to.</p>
