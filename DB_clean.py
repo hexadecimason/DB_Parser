@@ -6,15 +6,6 @@ import numpy as np
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 1000)
 
-# load CSV into a DF
-master_csv = pd.read_csv('data/DB_master.csv', low_memory = False)
-df_master = pd.DataFrame(master_csv)
-
-sub_df = pd.DataFrame()
-clean_df = pd.DataFrame(columns = df_master.columns.values.tolist())
-cleanfile = pd.DataFrame(columns = df_master.columns.values.tolist())
-nullboxes_df = pd.DataFrame(columns = df_master.columns.values.tolist())
-
 cleanMasterDates = False
 resetAPIs = False
 
@@ -22,24 +13,24 @@ resetAPIs = False
 
 def main():
 
-	# Note: several global variables are used for DataFrames to allow for main() and other functions to share references
-	global df_master # original CSV as a DF
-	global sub_df # df for expanding each potential cluster of boxes
-	global cleanfile # a cleaned whole file for appending to clean_df
-	global clean_df # final cleaned data
-	global nullboxes_df # separate file for wells with null box entries: most are chips
+	# load CSV into a DF
+	df_master = pd.read_csv('data/DB_master.csv', low_memory = False)
+
+	# Note: some global variables are used for DataFrames to allow 
+	# for main() and other functions to share references without extra parameters
+	global sub_df # df for subsetting by file
+	global cleanfile # a cleaned whole file for appending to the final DataFrame
 
 	# Excel auto-formatting can cut off API values
 	# this saves a corrected file
 	global resetAPIs
 	if resetAPIs:
-		ocdb_csv = pd.read_csv('data/XLS_backup.csv', low_memory = False)
-		ocdb_df = pd.DataFrame(ocdb_csv)
+		ocdb_df = pd.read_csv('data/XLS_backup.csv', low_memory = False)
 
 		for file in df_master['File #'].unique():
 			print("fixing API value: ", file)
 			api = ocdb_df[ocdb_df['File #'] == file]['API'].iloc[0]
-			df_master['API'][df_master['File #'] == file] = api
+			df_master.loc[df_master['File #'] == file, 'API'] = api
 
 		df_master.to_csv('data/DB_master_cleanAPIs.csv', index = False)
 		print('saved new file with fixed auto-formatted API values')
@@ -47,7 +38,7 @@ def main():
 		exit()
 
 	# dates in master file could become auto-formatted
-	# this saves a corrected file if we need it
+	# this saves a corrected file
 	global cleanMasterDates
 	if cleanMasterDates:
 		print('fixing well number formatting...')
@@ -84,45 +75,52 @@ def main():
 	# FIX MISSING BOX DATA
 
 	# List of files to unpack
-	files = filtered['File #'].unique()
+	file_list = filtered['File #'].unique()
 
-	for f in range(len(files)): #'f' runs through each file
+	clean_df = pd.DataFrame(columns = filtered.columns.values.tolist())
 
-		# subset for each file
-		sub_df = filtered[filtered['File #'] == files[f]]
-		cleanfile = pd.DataFrame(columns = cleanfile.columns.values.tolist())
+	for file in file_list: #'file' runs through each file
+
+		# subset for each file, set up a blank DF fro cleaned file
+		sub_df = filtered[filtered['File #'] == file]
+		cleanfile = pd.DataFrame(columns = sub_df.columns.values.tolist())
 		boxes_added = 0 # tracks boxes in a file
 
-		# sort through rows of each sub_df
-		for b in range(len(sub_df)): #'b' runs through each line (either a box, or cluster of boxes to be unpacked)
+		# index through rows of each row in sub_df
+		# file_row represents either a box or a set of boxes
+		for file_row in range(len(sub_df)):
 
-			boxes_to_add = -1
-			file_total = -1
-			_top = sub_df['Top'].iloc[b]
-			_bottom = sub_df['Bottom'].iloc[b]
+			boxes_in_row = -1
+			boxes_in_file = -1
+			row_top = sub_df['Top'].iloc[file_row]
+			row_bottom = sub_df['Bottom'].iloc[file_row]
 
-			boxNull = pd.isnull(sub_df['Box'].iloc[b]) and pd.notnull(sub_df['Total'].iloc[b])
-			totalNull = pd.isnull(sub_df['Total'].iloc[b]) and pd.notnull(sub_df['Box'].iloc[b])
-			noNull = pd.notnull(sub_df['Box'].iloc[b]) and pd.notnull(sub_df['Total'].iloc[b])
-		
-			if boxNull: boxes_to_add = sub_df['Total'].iloc[b] 
-			elif totalNull: boxes_to_add = sub_df['Box'].iloc[b] 
-			elif noNull: boxes_to_add = 1
+			boxNull = pd.isnull(sub_df['Box'].iloc[file_row]) and pd.notnull(sub_df['Total'].iloc[file_row])
+			totalNull = pd.isnull(sub_df['Total'].iloc[file_row]) and pd.notnull(sub_df['Box'].iloc[file_row])
+			noNull = pd.notnull(sub_df['Box'].iloc[file_row]) and pd.notnull(sub_df['Total'].iloc[file_row])
+			
+			# determine number of boxes represented by row		
+			if boxNull: boxes_in_row = sub_df['Total'].iloc[file_row] 
+			elif totalNull: boxes_in_row = sub_df['Box'].iloc[file_row] 
+			elif noNull: boxes_in_row = 1
 
-			for box in range(boxes_to_add):
+			# adds all boxes represented by individual row
+			for box in range(boxes_in_row):
 
-					if box == 0: boxtop = _top
-					else: boxtop = np.NaN
+				if box == 0: boxtop = row_top
+				else: boxtop = np.NaN
 
-					if box == boxes_to_add - 1: boxbottom = _bottom
-					else: boxbottom = np.NaN
+				if box == boxes_in_row - 1: boxbottom = row_bottom
+				else: boxbottom = np.NaN
 
-					#print("box: ", boxes_added + 1)
-					addBox(b, boxes_added + 1, file_total, boxtop, boxbottom)
-					boxes_added += 1
+				addBox(file_row, boxes_added + 1, boxes_in_file, boxtop, boxbottom)
+				boxes_added += 1
 
-		file_total = len(cleanfile)
-		cleanfile = cleanfile.assign(Total = file_total)
+		# determine total boxes in file
+		boxes_in_file = len(cleanfile)
+		cleanfile = cleanfile.assign(Total = boxes_in_file)
+
+		# add cleanfile to the aggreagate cleaned Dataframe
 		print("cleaned file: ", cleanfile['File #'].iloc[0])
 		clean_df = pd.concat([clean_df, cleanfile], ignore_index = True)
 
@@ -132,6 +130,7 @@ def main():
 
 ##############################################################################
 
+# Autoformatted number as date -> original format
 def parseWellNum(value):
 	wellNum = ''
 	terms = str(value).split('-')
@@ -154,7 +153,8 @@ def parseComment(com):
 	s = s.replace('"', '\\\"').replace("'", "\\\'")
 	return s
 
-
+# given an index in sub_df and box-level specifics,
+# adds box-level data to the cleaned file DataFrame
 def addBox(i, boxNum, boxTotal, boxTop, boxBottom):
 
 	global sub_df
@@ -169,7 +169,7 @@ def addBox(i, boxNum, boxTotal, boxTop, boxBottom):
 		sub_df['API'].iloc[i],
 		sub_df['Operator'].iloc[i],
 		sub_df['Lease'].iloc[i],
-		parseWellNum(sub_df['Well #'].iloc[i]),
+		sub_df['Well #'].iloc[i],
 		sub_df['Sec'].iloc[i],
 		sub_df['Tw'].iloc[i],
 		sub_df['TwD'].iloc[i],

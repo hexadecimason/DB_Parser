@@ -16,12 +16,14 @@ cursor.execute("""CREATE VIEW wellview AS SELECT
 # takes in a non-empty cursor.fetch_all() object and returns a list of dictionaries of well data
 def parse_q(q):
 
+	#if empty, return error code -1
 	if len(q) == 0:
 		print("not in database")
 		return -1
 
 	wells = []
 
+	# scrape through length of returned fetchall() object
 	for w in range(len(q)):
 		well = {'file' : q[w]['file'],
 				'API' : q[w]['api'],

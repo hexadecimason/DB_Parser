@@ -11,15 +11,12 @@ db_name = 'opic_core'
 nullboxes = True
 
 # helper function: pandas types and PG types don't interact very well by default
-
 def adapt_np64(val):
 	return(AsIs(val))
 register_adapter(np.int64, adapt_np64)
 
 # PARSE CSV
-
-master_csv = pd.read_csv("data/cleaned.csv")
-master_df = pd.DataFrame(master_csv)
+master_df = pd.read_csv("data/cleaned.csv")
 
 if nullboxes:
 	nullboxes_csv = pd.read_csv("data/nullboxes.csv")	
@@ -28,6 +25,7 @@ if nullboxes:
 
 	master_df = pd.concat([master_df, nullboxes_df])
 
+#empty list of wells
 well_list = []
 
 # structure wells with boxes
@@ -38,8 +36,7 @@ for file in master_df["File #"].unique():
 	# separate file
 	sub_df = master_df[master_df["File #"] == file]
 
-	# create well object
-
+	# create well structure
 	well = {'file' : file, 
            'total_boxes' : 0,#(sub_df['Total'].iloc[0]), 
            'api' : sub_df['API'].iloc[0], 
@@ -72,8 +69,8 @@ for file in master_df["File #"].unique():
 						'rest' : sub_df['Restrictions'].iloc[line],
 						'com' : sub_df['Comments'].iloc[line]}
 
-		well['boxes'].append(box_dict)
-		well['total_boxes'] += 1
+		well['boxes'].append(box_dict) # append box to list of well boxes
+		well['total_boxes'] += 1 # update well-level box total
 
 	# add to list of well objects
 	well_list.append(well)
