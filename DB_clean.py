@@ -160,7 +160,7 @@ def addBox(i, boxNum, boxTotal, boxTop, boxBottom):
 	global sub_df
 	global cleanfile
 
-	# file|box|total|loc|API|op|lease|Well#|S|T|Td|R|Rd|Q|
+	# zip columns 
 	row_add = dict(zip(sub_df.columns.values.tolist(),
 		[sub_df['File #'].iloc[i],
 		boxNum, # 'Box'

@@ -5,7 +5,7 @@ import psycopg2 as ppg2
 from psycopg2.extensions import register_adapter, AsIs
 
 # DATABASE VARS
-db_name = 'opic_core'
+db_name = 'opic_core_nested'
 
 # include nullboxes.csv?
 nullboxes = True
@@ -97,30 +97,30 @@ cursor.execute("DROP TYPE IF EXISTS public.box;")
 
 # SET UP DB
 cursor.execute("""CREATE TYPE box AS (
-				num			int,
-				fm			text,
-				top			text,
-				bottom		text,
-				diameter	text,
-				boxType		text,
-				sampleType	text,
-				condition	text,
+				box_num			int,
+				fm				text,
+				top				text,
+				bottom			text,
+				diameter		text,
+				box_type		text,
+				sample_type		text,
+				condition		text,
 				restrictions	text,
-				comments	text );"""	)
+				comments		text );"""	)
 
 cursor.execute("""CREATE TABLE wells (
-				file		text,
+				file_num	text,
 				api			bigint,
-				boxcount	int,
+				box_count	int,
 				operator	text,
 				lease		text,
 				well_num	text,
 				sec			int,
-				town		int,
-				town_d		text,
-				range		int,
-				range_d		text,
-				QQ			text,
+				twn			int,
+				twn_d		text,
+				rng			int,
+				rng_d		text,
+				qq			text,
 				latitude	double precision,
 				longitude	double precision,
 				county		text,
@@ -128,7 +128,7 @@ cursor.execute("""CREATE TABLE wells (
 				field		text,
 				boxes		public.box[],
 
-				PRIMARY KEY(file));"""	)
+				PRIMARY KEY(file_num));"""	)
 
 # STORE STRUCTURED DATA
 print(f"Adding wells to Postgres DB: {db_name}")
@@ -150,7 +150,7 @@ for well in well_list:
 	# add boxes
 	addBox_query = """UPDATE wells SET boxes = ( ARRAY_APPEND(boxes, 
 						(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)::public.box) 
-						) WHERE file = %s;"""
+						) WHERE file_num = %s;"""
 
 
 	for bx in well['boxes']:
