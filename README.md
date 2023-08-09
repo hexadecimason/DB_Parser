@@ -18,9 +18,9 @@ This uses the *psycopg2* library as an adapter for PostgreSQL to create, structu
 
 ## ***PostgreSQL Database Structure***
 
-The Postgres instance contains a table, 'wells,' composed of the well-level data from the original database (File #, API, Operator, Lease, etc.), as well as an array of boxes. The array of boxes will be defined by a TYPE for all box-level data (see **DB_parse.py** for details of the type definition).
+The Postgres instance contains two tables, 'wells,' composed of the well-level data from the original database (File #, API, Operator, Lease, etc.), and a table for all box-level data. These two tables are correlated using a foreign key on file number. This structure provides an easy mechanism for making queries of both levels of data, and provides a natural structure for integrating into other environments such as Django.
 
-This structure is more intuitive than our previous implementation where every row represents a single box, or group of boxes. Previously, well-level data was duplicated for every box. This created inherent redundancy
+Previously, box-level data were nested in an array in the 'wells' table; however, querying for box level data became unintuitive and verbose and is not a natural fit for how Django builds models of databases.
 
 ## ***Interface to Databse***
 

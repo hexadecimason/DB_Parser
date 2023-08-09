@@ -37,15 +37,17 @@ option to either include or exclude <em>nullboxes.csv</em>. Boxes from
 but will have “None” in place of a number.</p>
 <h2 id="postgresql-database-structure"><strong><em>PostgreSQL Database
 Structure</em></strong></h2>
-<p>The Postgres instance contains a table, ‘wells,’ composed of the
+<p>The Postgres instance contains two tables, ‘wells,’ composed of the
 well-level data from the original database (File #, API, Operator,
-Lease, etc.), as well as an array of boxes. The array of boxes will be
-defined by a TYPE for all box-level data (see
-<strong>DB_parse.py</strong> for details of the type definition).</p>
-<p>This structure is more intuitive than our previous implementation
-where every row represents a single box, or group of boxes. Previously,
-well-level data was duplicated for every box. This created inherent
-redundancy</p>
+Lease, etc.), and a table for all box-level data. These two tables are
+correlated using a foreign key on file number. This structure provides
+an easy mechanism for making queries of both levels of data, and
+provides a natural structure for integrating into other environments
+such as Django.</p>
+<p>Previously, box-level data were nested in an array in the ‘wells’
+table; however, querying for box level data became unintuitive and
+verbose and is not a natural fit for how Django builds models of
+databases.</p>
 <h2 id="interface-to-databse"><strong><em>Interface to
 Databse</em></strong></h2>
 <p>Currently, the database is stored locally and accessed with a Python

@@ -1,17 +1,17 @@
 import psycopg2 as ppg2
 from psycopg2.extras import RealDictCursor
 
-db_name = "opic_core"
+db_name = "opic_core_fk"
 con = ppg2.connect(f"""dbname = {db_name} user=postgres password=p@ssw0rd""")
 cursor = con.cursor(cursor_factory=RealDictCursor)
 
 # well-level VIEW
 cursor.execute("DROP VIEW IF EXISTS wellview;")
-cursor.execute("""CREATE VIEW wellview AS SELECT
+'''cursor.execute("""CREATE VIEW wellview AS SELECT
 					file, api, boxcount, operator, lease, well_num,
 					sec, town, town_d, range, range_d, QQ, latitude, longitude,
 					county, state, field
-				FROM wells;""")
+				FROM wells;""")'''
 
 # takes in a non-empty cursor.fetch_all() object and returns a list of dictionaries of well data
 def parse_q(q):
@@ -25,37 +25,38 @@ def parse_q(q):
 
 	# scrape through length of returned fetchall() object
 	for w in range(len(q)):
-		well = {'file' : q[w]['file'],
+		well = {'file' : q[w]['file_num'],
 				'API' : q[w]['api'],
 				'operator' : q[w]['operator'],
 				'lease' : q[w]['lease'],
 				'well_num' : q[w]['well_num'],
-				'str' : [q[w]['sec'], q[w]['town'], q[w]['town_d'], q[w]['range'], q[w]['range_d']],
+				'str' : [q[w]['sec'], q[w]['twn'], q[w]['twn_d'], q[w]['rng'], q[w]['rng_d']],
 				'qq' : q[w]['qq'],
 				'll' : [q[w]['latitude'], q[w]['longitude']],
 				'county' : q[w]['county'],
 				'state' : q[w]['state'],
 				'field' : q[w]['field'],
-				'boxcount' : q[w]['boxcount'],
+				'box_count' : q[w]['box_count'],
 				'boxes' : []}
 
 		file_num = well['file']
-		cursor.execute(f"""WITH bxs AS (SELECT UNNEST(boxes) AS bx 
-								FROM wells WHERE file = '{file_num}')
-					SELECT (bx).* from bxs;""")
-		q = cursor.fetchall()
 
-		for b in range(len(q)):
-			bx = {'#' : q[b]['num'],
-				'top' : q[b]['top'],
-				'bottom' : q[b]['bottom'],
-				'fm' : q[b]['fm'],
-				'diameter' : q[b]['diameter'],
-				'box type' : q[b]['boxtype'],
-				'sample type' : q[b]['sampletype'],
-				'condition' : q[b]['condition'],
-				'restrictions' : q[b]['restrictions'],
-				'comments' : q[b]['comments']}
+		q_string = f"""SELECT * FROM boxes WHERE file_num = '{file_num}';"""
+		cursor.execute(q_string)
+		q_boxquery = cursor.fetchall()
+
+		for b in range(len(q_boxquery)):
+			bx = { 'file' : q_boxquery[b]['file_num'],
+				'#' : q_boxquery[b]['box_num'],
+				'top' : q_boxquery[b]['top'],
+				'bottom' : q_boxquery[b]['bottom'],
+				'fm' : q_boxquery[b]['fm'],
+				'diameter' : q_boxquery[b]['diameter'],
+				'box type' : q_boxquery[b]['box_type'],
+				'sample type' : q_boxquery[b]['sample_type'],
+				'condition' : q_boxquery[b]['condition'],
+				'restrictions' : q_boxquery[b]['restrictions'],
+				'comments' : q_boxquery[b]['comments']}
 
 			well['boxes'].append(bx)
 		wells.append(well)
@@ -77,7 +78,7 @@ def print_output(wells, include_boxes):
 			print("County: \t\t" + str(well['county']))
 			print("State: \t\t\t" + str(well['state']))
 			print("Field: \t\t\t" + str(well['field']))
-			print("Boxes: \t\t\t" + str(well['boxcount']))
+			print("Boxes: \t\t\t" + str(well['box_count']))
 
 			if(include_boxes):
 				print('\n')
@@ -103,20 +104,20 @@ def main():
 			include = input("include box-level data? (Y to confirm): ").upper()
 			include_boxes = True if include == "Y" else False
 			file_num = input("enter file number: ")
-			cursor.execute(f"""SELECT * FROM wellview WHERE file = '{file_num}';""")
+			cursor.execute(f"""SELECT * FROM wells WHERE file_num = '{file_num}';""")
 		case "API":
 			include = input("include box-level data? (Y to confirm): ").upper()
 			include_boxes = True if include == "Y" else False
 			api = input("enter API: ")
-			cursor.execute(f"""SELECT * FROM wellview WHERE api = '{api}';""")
+			cursor.execute(f"""SELECT * FROM wells WHERE api = '{api}';""")
 		case "OPERATOR":
 			include_boxes = False
 			operator = input("enter operator: ")
-			cursor.execute(f"""SELECT * FROM wellview WHERE LOWER(operator) LIKE LOWER('%{operator}%');""")
+			cursor.execute(f"""SELECT * FROM wells WHERE LOWER(operator) LIKE LOWER('%{operator}%');""")
 		case "LEASE":
 			include_boxes = False
 			lease = input("enter lease name: ")
-			cursor.execute(f"""SELECT * FROM wellview WHERE LOWER(lease) LIKE LOWER('%{lease}%');""")
+			cursor.execute(f"""SELECT * FROM wells WHERE LOWER(lease) LIKE LOWER('%{lease}%');""")
 		case "Q":
 			print("exiting program...")
 			exit()
